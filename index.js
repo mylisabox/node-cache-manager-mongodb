@@ -5,15 +5,16 @@
  */
 
 var Client = require('mongodb').MongoClient,
-uri = require('mongodb-uri'),
-zlib = require('zlib'), noop = function () {};
+  uri = require('mongodb-uri'),
+  zlib = require('zlib'), noop = function () {
+  };
 
 /**
  * Export `MongoStore`.
  */
 
 exports = module.exports = {
-  create : function (args) {
+  create: function (args) {
     return MongoStore(args);
   }
 };
@@ -47,10 +48,10 @@ function MongoStore(args) {
       } else {
         store.MongoOptions.database = store.MongoOptions.database || store.MongoOptions.db;
         store.MongoOptions.hosts = store.MongoOptions.hosts || [{
-              port : store.MongoOptions.port || 27017,
-              host : store.MongoOptions.host || '127.0.0.1'
-            }
-          ];
+          port: store.MongoOptions.port || 27017,
+          host: store.MongoOptions.host || '127.0.0.1'
+        }
+        ];
         store.MongoOptions.hosts = store.MongoOptions.hosts || 3600;
         conn = uri.format(store.MongoOptions);
       }
@@ -67,18 +68,34 @@ function MongoStore(args) {
       store.client = db;
       db.createCollection(store.coll, function (err, collection) {
         store.collection = collection;
-        // Create an index on the a field
-        collection.createIndex({
-          expiresAt : 1
-        }, {
-          unique : true,
-          background : true,
-          expireAfterSeconds : store.MongoOptions.ttl
-        }, function (err, indexName) {
+
+        var cb = function (err, indexName) {
           if (err) {
             console.log("Error During Indexes creation");
-          } else if ('function' === typeof args.createCollectionCallback){
+          } else if ('function' === typeof args.createCollectionCallback) {
             args.createCollectionCallback(store);
+          }
+        };
+
+        var adminDb = db.admin();
+        adminDb.serverStatus(function (err, info) {
+          if (info.version.indexOf("3.") === -1) {
+            // Create an index on the a field
+            collection.createIndex('expiresAt', {
+              expiresAt: 1
+            }, {
+              unique: true,
+              background: true,
+              expireAfterSeconds: store.MongoOptions.ttl
+            }, cb);
+          } else {
+            collection.createIndex({
+              expiresAt: 1
+            }, {
+              unique: true,
+              background: true,
+              expireAfterSeconds: store.MongoOptions.ttl
+            }, cb);
           }
         });
       });
@@ -143,7 +160,7 @@ MongoStore.prototype.get = function get(key, options, fn) {
   var store = this;
 
   store.collection.findOne({
-    key : key
+    key: key
   }, function findOne(err, data) {
     if (err) {
       return fn(err);
@@ -188,19 +205,19 @@ MongoStore.prototype.set = function set(key, val, options, fn) {
   var ttl = (options && (options.ttl || options.ttl === 0)) ? options.ttl : store.MongoOptions.ttl;
 
   var data,
-  query = {
-    key : key
-  },
-  options = {
-    upsert : true,
-    safe : true
-  };
+    query = {
+      key: key
+    },
+    options = {
+      upsert: true,
+      safe: true
+    };
 
   try {
     data = {
-      key : key,
-      value : val,
-      expire : ttl === -1 ? -1 : Date.now() + ((ttl || 60) * 1000)
+      key: key,
+      value: val,
+      expire: ttl === -1 ? -1 : Date.now() + ((ttl || 60) * 1000)
     };
   } catch (err) {
     return fn(err);
@@ -246,9 +263,9 @@ MongoStore.prototype.del = function del(key, options, fn) {
   var store = this;
   fn = fn || noop;
   store.collection.remove({
-    key : key
+    key: key
   }, {
-    safe : true
+    safe: true
   }, fn);
 };
 
@@ -271,7 +288,7 @@ MongoStore.prototype.reset = function reset(key, fn) {
   fn = fn || noop;
 
   store.collection.remove({}, {
-    safe : true
+    safe: true
   }, fn);
 
 };
