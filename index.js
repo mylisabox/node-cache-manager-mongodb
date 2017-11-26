@@ -151,7 +151,7 @@ MongoStore.prototype.get = function get(key, options, fn) {
     if (!data) {
       return fn(null, null);
     }
-    if (data.expire < Date.now()) {
+    if (data.expire !== -1 && data.expire < Date.now()) {
       store.del(key);
       return fn(null, null);
     }
@@ -200,7 +200,7 @@ MongoStore.prototype.set = function set(key, val, options, fn) {
     data = {
       key : key,
       value : val,
-      expire : Date.now() + ((ttl || 60) * 1000)
+      expire : ttl === -1 ? -1 : Date.now() + ((ttl || 60) * 1000)
     };
   } catch (err) {
     return fn(err);
