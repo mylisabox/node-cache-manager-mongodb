@@ -79,9 +79,8 @@ function MongoStore(args) {
 
         var adminDb = db.admin();
         adminDb.serverStatus(function (err, info) {
-          if (info.version.indexOf("3.") === -1) {
-            // Create an index on the a field
-            collection.createIndex('expiresAt', {
+          if (info.version.startsWith("3.")) {
+            collection.createIndex({
               expiresAt: 1
             }, {
               unique: true,
@@ -89,7 +88,8 @@ function MongoStore(args) {
               expireAfterSeconds: store.MongoOptions.ttl
             }, cb);
           } else {
-            collection.createIndex({
+            // Create an index on the a field
+            collection.createIndex('expiresAt', {
               expiresAt: 1
             }, {
               unique: true,
